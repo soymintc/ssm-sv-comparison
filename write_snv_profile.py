@@ -27,12 +27,10 @@ def plot_mutation_spectra(snv, fig, ax, tag, despine=False):
     df['norm_tri_nt'] = df.index.str.replace(pat, r'\1\2\4', regex=True) 
     df['norm_mut_type'] = df.index.str.replace(pat, r'\2>\3', regex=True) 
     df['index'] = range(df.shape[0])
-    # print(df)
     
     for mut_type, mut_type_data in df.groupby(['norm_mut_type']):
         ax.bar(data=mut_type_data, x='index', height='probability', label=mut_type)
         
-    # plt.xticks(df['index'], df['norm_tri_nt'], rotation=90, fontproperties=font)
     ax.set_xticks(df['index'])
     ax.set_xticklabels(df['norm_tri_nt'], rotation=90, fontproperties=font)
     ax.set_xlim((-1, 97))
@@ -137,7 +135,6 @@ def count_snvs(snvs, genome):
     df['var'] = df['context'].str[0] + '[' + df['var_type'] + ']' + df['context'].str[-1]
 
     return counts, df
-
 
 def make_var_set(data, vartype='snv'):
     if vartype == 'snv':
@@ -245,9 +242,7 @@ def get_snv_data_and_sets(joint_wgssnv, wgssnv_metadata, tempo_snv_data,
     for rix, row in joint_wgssnv.iterrows(): # Only for the overlap between Tempo and Isabl/WGS
         if select_id != None:
             if row['isabl_sample_id'] != select_id: continue #'SA1047A': continue ##@##
-
         isabl_tumor_id, isabl_normal_id, consensus = get_consensus_snv(row, wgssnv_metadata, filter_isabl_maf=filter_isabl_maf)
-        
         consensus = consensus[isabl_maf_cols].rename(columns=dict(zip(isabl_maf_cols, dst_maf_cols)), inplace=False)
         tempo, tempo_tumor_id, tempo_normal_id = map_tempo_snv_by_id(tempo_snv_data, isabl_tumor_id, isabl_normal_id)
 
@@ -255,17 +250,14 @@ def get_snv_data_and_sets(joint_wgssnv, wgssnv_metadata, tempo_snv_data,
 
         consensus = consensus.set_index(['chrom', 'pos', 'ref', 'alt'], drop=False)
         tempo = tempo.set_index(['chrom', 'pos', 'ref', 'alt'], drop=False)
-
         consensus_match = consensus[consensus.index.isin(snv_match.index)]
         consensus_nonmatch = consensus[~consensus.index.isin(snv_match.index)]
-
         tempo_match = tempo[tempo.index.isin(snv_match.index)]
         tempo_nonmatch = tempo[~tempo.index.isin(snv_match.index)]
 
         A, B, field = print_set_stats(consensus_match, consensus_nonmatch, tempo_match, tempo_nonmatch,
                                isabl_tumor_id, tempo_tumor_id, isabl_normal_id, tempo_normal_id,
                                vartype='snv')
-
         if plot_venn:
                 vd = venn2_unweighted([A, B], set_labels=('consensus', 'tempo'))
         
@@ -320,8 +312,9 @@ if __name__ == "__main__":
     field_ix = 'isabl_tumor_id isabl_normal_id tempo_tumor_id tempo_normal_id A B A-B B-A A&B A|B'.split(' ')
     for ix, isabl_tumor_id in enumerate(joint_wgssnv['isabl_sample_id']):
         print(f'Running for {isabl_tumor_id}', file=sys.stderr)
-        isabl, tempo, field = get_snv_data_and_sets(joint_wgssnv, wgssnv_metadata, tempo_snv_data, select_id=isabl_tumor_id, plot_venn=False, print_header=False,
-                                             filter_isabl_maf=flt)
+        isabl, tempo, field = get_snv_data_and_sets(joint_wgssnv, wgssnv_metadata, tempo_snv_data, 
+                select_id=isabl_tumor_id, plot_venn=False, print_header=False,
+                filter_isabl_maf=flt)
         fields[isabl_tumor_id] = pd.Series(field, index=field_ix)
         isabl_counts, isabl_context = count_snvs(isabl, genome)
         tempo_counts, tempo_context = count_snvs(tempo, genome)
